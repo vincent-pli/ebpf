@@ -13,6 +13,7 @@ const (
 	ebpfFS          = "/sys/fs/bpf"
 	egressProgName  = "egress"
 	ingressProgName = "ingress"
+	blockedMapName  = "blocked_map"
 )
 
 func main() {
@@ -20,13 +21,14 @@ func main() {
 
 	ingressPinPath := filepath.Join(ebpfFS, ingressProgName)
 	egressPinPath := filepath.Join(ebpfFS, egressProgName)
+	blockedPinPath := filepath.Join(ebpfFS, blockedMapName)
 
-	ingressProg, err := ebpf.LoadPinnedProgram(ingressPinPath)
+	ingressProg, err := ebpf.LoadPinnedProgram(ingressPinPath, &ebpf.LoadPinOptions{})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	egressProg, err = ebpf.LoadPinnedProgram(egressPinPath)
+	egressProg, err = ebpf.LoadPinnedProgram(egressPinPath, &ebpf.LoadPinOptions{})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -44,4 +46,5 @@ func main() {
 
 	os.Remove(ingressPinPath)
 	os.Remove(egressPinPath)
+	os.Remove(blockedPinPath)
 }
