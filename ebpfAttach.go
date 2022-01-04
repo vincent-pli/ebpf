@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/binary"
-	"net"
+	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 
@@ -13,17 +14,19 @@ import (
 )
 
 const (
-	rootCgroup	  = "/sys/fs/cgroup/unified"
-	ebpfFS		  = "/sys/fs/bpf"
-	bpfCodePath	 = "bpf.o"
+	rootCgroup      = "/sys/fs/cgroup/unified"
+	ebpfFS          = "/sys/fs/bpf"
+	bpfCodePath     = "bpf.o"
 	egressProgName  = "egress"
 	ingressProgName = "ingress"
 	blockedMapName  = "blocked_map"
 )
 
-
-
 func main() {
+	const usage = "-ip=8.8.8.8"
+	var ipAddress string
+	flag.StringVar(&ipAddress, "ip", "8.8.8.8", usage)
+
 	unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: unix.RLIM_INFINITY,
 		Max: unix.RLIM_INFINITY,
@@ -37,6 +40,7 @@ func main() {
 
 	var ingressProg, egressProg *ebpf.Program
 	var blockedMap *ebpf.Map
+
 	ingressPinPath := filepath.Join(ebpfFS, ingressProgName)
 	egressPinPath := filepath.Join(ebpfFS, egressProgName)
 	blockedPinPath := filepath.Join(ebpfFS, blockedMapName)
@@ -57,7 +61,7 @@ func main() {
 	blockedMap.Pin(blockedPinPath)
 
 	_, err = link.AttachCgroup(link.CgroupOptions{
-		Path:	cgroup.Name(),
+		Path:    cgroup.Name(),
 		Attach:  ebpf.AttachCGroupInetIngress,
 		Program: collec.Programs[ingressProgName],
 	})
@@ -67,7 +71,7 @@ func main() {
 	}
 
 	_, err = link.AttachCgroup(link.CgroupOptions{
-		Path:	cgroup.Name(),
+		Path:    cgroup.Name(),
 		Attach:  ebpf.AttachCGroupInetEgress,
 		Program: collec.Programs[egressProgName],
 	})
@@ -76,7 +80,7 @@ func main() {
 		return
 	}
 	blockedMap, err = ebpf.LoadPinnedMap(blockedPinPath, &ebpf.LoadPinOptions{})
-	ip_bytes := net.ParseIP("8.8.8.8").To4()
+	ip_bytes := net.ParseIP(ipAddress).To4()
 	ip_int := binary.LittleEndian.Uint32(ip_bytes)
 	if err = blockedMap.Put(&ip_int, &ip_int); err != nil {
 		fmt.Println(err)
