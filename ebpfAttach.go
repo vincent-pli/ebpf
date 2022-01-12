@@ -26,6 +26,7 @@ func main() {
 	const usage = "-ip=8.8.8.8"
 	var ipAddress string
 	flag.StringVar(&ipAddress, "ip", "8.8.8.8", usage)
+	flag.Parse()
 
 	unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: unix.RLIM_INFINITY,
