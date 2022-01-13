@@ -17,8 +17,12 @@ struct bpf_map_def __section("maps") blocked_map = {
 /* Handle a packet: return whether it should be allowed or dropped */
 inline bool handle_pkt(struct __sk_buff *skb) {
     struct iphdr iph;
+
     /* Load packet header */
     bpf_skb_load_bytes(skb, 0, &iph, sizeof(struct iphdr));
+
+    const char fmt_str[] = "hello world from ebpf!";
+    bpf_trace_printk(fmt_str, sizeof(fmt_str));
     /* Check if IPs are in "blocked" map */
     bool blocked = bpf_map_lookup_elem(&blocked_map, &iph.saddr) || bpf_map_lookup_elem(&blocked_map, &iph.daddr);
     /* Return whether it should be allowed or dropped */
